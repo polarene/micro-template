@@ -29,11 +29,18 @@ class MicroTemplateSpec : StringSpec({
         greeting(context) shouldBe "Hello Mr.Matteo!"
     }
 
-    "should produce an empty string if a token is not in context" {
+    "should replace a missing token with an empty string" {
         val context = emptyMap<String, Any>()
         val greeting = MicroTemplate("Hello {name}!")
 
         greeting(context) shouldBe "Hello !"
+    }
+
+    "should replace a missing token with a custom string" {
+        val context = emptyMap<String, Any>()
+        val greeting = MicroTemplate("Hello {name}!", default = "PeepeePoopoo")
+
+        greeting(context) shouldBe "Hello PeepeePoopoo!"
     }
 })
 
