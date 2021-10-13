@@ -56,8 +56,9 @@ class MicroTemplateErrorSpec : StringSpec({
         "{token",
         "token}",
         "Fermium de neuter pars, {token perdere musa!",
+        "Fermium de {bad-token1 pars, bad_token2} perdere musa!",
     ).forEach {
-        "should reject a template with only one malformed token: $it" {
+        "should reject a template containing only malformed tokens: $it" {
             shouldThrow<IllegalArgumentException> {
                 MicroTemplate(it)
             }
