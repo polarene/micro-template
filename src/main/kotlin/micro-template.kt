@@ -1,11 +1,12 @@
 package io.github.polarene
 
-
-val TOKEN = """\{[-\w]+}""".toRegex()
+private val TOKEN = """\{[-\w]+}""".toRegex()
 
 class MicroTemplate(val template: String, val default: String = "") {
     init {
-        require(TOKEN.containsMatchIn(template)) { "A template definition must contain at least one token" }
+        require(TOKEN.containsMatchIn(template)) {
+            "A template definition must contain at least one token matching $TOKEN"
+        }
     }
 
     operator fun invoke(context: Map<String, Any>) = template.replace(TOKEN) {
