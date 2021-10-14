@@ -97,4 +97,4 @@ This library is contained in a single file and has no 3rd-party dependencies, so
 
 ## TODO
 
-For the list of next features, see the [TODO](./projects/1) kanban.  
+For the list of next features, see the [TODO](https://github.com/polarene/micro-template/projects/1) kanban.  
