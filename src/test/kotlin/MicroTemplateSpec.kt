@@ -1,10 +1,12 @@
+@file:Suppress("unused")
+
 import io.github.polarene.MicroTemplate
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
 /**
- * TODO: Document me
+ * Template features.
  * @author mmirk
  */
 class MicroTemplateSpec : StringSpec({
@@ -41,11 +43,20 @@ class MicroTemplateSpec : StringSpec({
         val greeting = MicroTemplate("Hello, {title}{name}!", default = "-")
 
         greeting(context) shouldBe "Hello, --!"
+    }
 
-        greeting(context) shouldBe "Hello PeepeePoopoo!"
+    "should replace any missing token with its local default value" {
+        val context = mapOf<String, Any>("name" to "Matteo")
+        val greeting = MicroTemplate("Hello, {title:Buana} {name}!")
+
+        greeting(context) shouldBe "Hello, Buana Matteo!"
     }
 })
 
+/**
+ * Template error cases.
+ * @author mmirk
+ */
 class MicroTemplateErrorSpec : StringSpec({
     "should reject a template without tokens" {
         shouldThrow<IllegalArgumentException> {

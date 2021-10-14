@@ -7,6 +7,7 @@ A very tiny and simple text templating library for Kotlin. It has very limited f
 ## Usage
 
 A simple "hello" example:
+
 ```kotlin
 // create a reusable template
 val greeting = MicroTemplate("Hello, {name}!")
@@ -96,7 +97,7 @@ This library is contained in a single file and has no 3rd-party dependencies, so
 
 ## TODO
 
-- [ ] Default value per token
+- [x] Default value per token
 - [ ] Basic formatting and transformation
 - [x] Find a better name for the project
 - [ ] Publish packages for maven/gradle
