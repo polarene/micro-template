@@ -10,35 +10,37 @@ import io.kotest.matchers.shouldBe
 class MicroTemplateSpec : StringSpec({
     "should replace a single token" {
         val context = mapOf("name" to "Matteo")
-        val greeting = MicroTemplate("Hello {name}!")
+        val greeting = MicroTemplate("Hello, {name}!")
 
-        greeting(context) shouldBe "Hello Matteo!"
+        greeting(context) shouldBe "Hello, Matteo!"
     }
 
     "should replace a repeated token" {
         val context = mapOf("name" to "Matteo")
-        val greeting = MicroTemplate("Hello {name}{name}!")
+        val greeting = MicroTemplate("Hello, {name}-{name}!")
 
-        greeting(context) shouldBe "Hello MatteoMatteo!"
+        greeting(context) shouldBe "Hello, Matteo-Matteo!"
     }
 
     "should replace multiple tokens" {
         val context = mapOf("name" to "Matteo", "title" to "Mr.")
-        val greeting = MicroTemplate("Hello {title}{name}!")
+        val greeting = MicroTemplate("Hello, {title}{name}!")
 
-        greeting(context) shouldBe "Hello Mr.Matteo!"
+        greeting(context) shouldBe "Hello, Mr.Matteo!"
     }
 
-    "should replace a missing token with an empty string" {
+    "should replace any missing token with an empty string" {
         val context = emptyMap<String, Any>()
-        val greeting = MicroTemplate("Hello {name}!")
+        val greeting = MicroTemplate("Hello, {title}{name}!")
 
-        greeting(context) shouldBe "Hello !"
+        greeting(context) shouldBe "Hello, !"
     }
 
-    "should replace a missing token with a custom string" {
+    "should replace any missing token with a global default value" {
         val context = emptyMap<String, Any>()
-        val greeting = MicroTemplate("Hello {name}!", default = "PeepeePoopoo")
+        val greeting = MicroTemplate("Hello, {title}{name}!", default = "-")
+
+        greeting(context) shouldBe "Hello, --!"
 
         greeting(context) shouldBe "Hello PeepeePoopoo!"
     }
