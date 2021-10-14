@@ -97,7 +97,4 @@ This library is contained in a single file and has no 3rd-party dependencies, so
 
 ## TODO
 
-- [x] Default value per token
-- [ ] Basic formatting and transformation
-- [x] Find a better name for the project
-- [ ] Publish packages for maven/gradle
+For the list of next features, see the [TODO](./projects/1) kanban.  
