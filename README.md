@@ -1,6 +1,6 @@
 # Micro Template 📃
 
-A very tiny and simple text templating library for Kotlin. It has very limited features, so it's intended to be used for short templates that don't need any logic or advanced formatting. All it does is replace every named token (ex: `{name}`) with a matching value from a map (context). Not suitable for rendering web views or pages, in general. 
+A very tiny and simple text templating library for Kotlin. It has very limited features, so it's intended to be used for short templates that don't need any logic or advanced formatting. All it does is replace every named token (ex: `{name}`) with a matching value from a map (context), or provide a default for missing ones. Not suitable for rendering web views or pages, in general. 
 
 **NOTE**: It's not optimized for speed, but as long as you render short strings performance shouldn't be a problem.
 
@@ -24,7 +24,7 @@ val status = MicroTemplate(
     """
     Welcome back {user}! 
     You have {messages} unread messages. 
-    Your crypto balance: {balance}
+    Your crypto balance is: {balance}
     """
 )
 
@@ -35,7 +35,37 @@ val context = mapOf(
 )
 status(context) //  Welcome back Tom! 
                 //  You have 99 unread messages.
-                //  Your crypto balance: 10000©
+                //  Your crypto balance is: 10000©
+```
+
+Handling missing values:
+
+```kotlin
+// by default missing values are replaced with an empty string
+val greeting = MicroTemplate("Hello, {name}!")
+greeting(emptyMap<String, Any>()) // "Hello, !"
+
+// you can set a default value for the whole template
+val scores = MicroTemplate(
+    """
+    Leaderboard
+    ---
+    Team A      {scoreA}
+    Team B      {scoreB}
+    Team C      {scoreC}
+    """,
+    default = "N/A"
+)
+scores(mapOf("scoreA" to 99)) // Leaderboard
+                              // ---
+                              // Team A      99
+                              // Team B      N/A
+                              // Team C      N/A
+
+// or you can specify a default for a token
+val greeting = MicroTemplate("Hello, {title:Buana }{name}!")
+val context = mapOf<String, Any>("name" to "Matteo")
+greeting(context) shouldBe "Hello, Buana Matteo!"
 ```
 
 ## Features
@@ -44,7 +74,7 @@ Current features:
 - basic token interpolation
 - all types are converted using their `toString()` function
 - missing values are replaced with an empty string by default
-- a custom default value can be configured globally
+- a custom default value can be configured globally or per token
 
 Micro Template is useful if you need a quick and basic template support, hard-coded in your source code (it doesn't support loading template files).
 
