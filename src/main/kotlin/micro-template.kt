@@ -8,7 +8,7 @@ typealias Context = Map<String, Any>
  *
  *   {identifier:default_value}
  */
-internal val TOKEN = """\{([-\w]+)(?::([^}]*))?}""".toRegex()
+private val TOKEN = """\{([-\w]+)(?::([^}]*))?}""".toRegex()
 
 /**
  * A micro template.
@@ -41,7 +41,7 @@ class MicroTemplate(val template: String, val default: String = "") {
  * @property default String
  * @constructor
  */
-internal class Token(m: MatchResult, globalDefault: String) {
+private class Token(m: MatchResult, globalDefault: String) {
     val name: String = m.groups[1]!!.value
     val default: String = m.groups[2]?.value ?: globalDefault
 
