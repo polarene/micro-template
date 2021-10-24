@@ -33,11 +33,15 @@ class MicroTemplate(val template: String, val default: String = "") {
      * @param context the values to be replaced in this template
      * @return the resulting string after interpolation
      */
-    operator fun invoke(context: Context): String {
-        return template.replace(TOKEN) {
-            Token(it, default).lookFrom(context)
-        }.replace(ESCAPED_RESERVED, "$1")
+    operator fun invoke(context: Context) = template
+        .interpolate(context)
+        .unescape()
+
+    private fun String.interpolate(context: Context) = replace(TOKEN) {
+        Token(it, default).lookFrom(context)
     }
+
+    private fun String.unescape() = replace(ESCAPED_RESERVED, "$1")
 }
 
 /**
