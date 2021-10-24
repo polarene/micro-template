@@ -51,6 +51,13 @@ class MicroTemplateSpec : StringSpec({
 
         greeting(context) shouldBe "Hello, Buana Matteo!"
     }
+
+    "should render reserved characters when escaped" {
+        val context = mapOf<String, Any>("ma" to "Mama", "token" to "IGNORE ME")
+        val literalToken = MicroTemplate("""Look {ma}, I need a literal \{token\} here!""")
+
+        literalToken(context) shouldBe "Look Mama, I need a literal {token} here!"
+    }
 })
 
 /**
