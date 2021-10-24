@@ -4,6 +4,7 @@ import io.github.polarene.MicroTemplate
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldMatch
 
 /**
  * Template features.
@@ -46,10 +47,38 @@ class MicroTemplateSpec : StringSpec({
     }
 
     "should replace any missing token with its local default value" {
-        val context = mapOf<String, Any>("name" to "Matteo")
+        val context = mapOf("name" to "Matteo")
         val greeting = MicroTemplate("Hello, {title:Buana} {name}!")
 
         greeting(context) shouldBe "Hello, Buana Matteo!"
+    }
+
+    "should render a literal token inside text" {
+        val context = mapOf("ma" to "Mama", "token" to "IGNORE ME")
+        val literalToken = MicroTemplate("""Look {ma}, I need a literal \{token\} here!""")
+
+        literalToken(context) shouldBe "Look Mama, I need a literal {token} here!"
+    }
+
+    listOf(
+        """Hello, {name}! Give me a \{""",
+        """Hello, {name}! Give me a \}""",
+        """Hello, {name}! Give me a \{\}""",
+        """Hello, {name}! Give me a \{\{""",
+        """Hello, {name}! Give me a \}\}""",
+        """Hello, {name}! Give me a \{\{\}\}"""
+    ).forEach {
+        val context = mapOf("name" to "Springfield")
+        "should render reserved characters when escaped: ${it.substringAfterLast(' ')}" {
+            MicroTemplate(it)(context) shouldMatch ".+ [{}]+"
+        }
+    }
+
+    "should render reserved characters in default token value when escaped" {
+        val context = emptyMap<String, Any>()
+        val literalDefault = MicroTemplate("""My placeholder is {ph:\{\}}""")
+
+        literalDefault(context) shouldBe "My placeholder is {}"
     }
 })
 
@@ -70,8 +99,12 @@ class MicroTemplateErrorSpec : StringSpec({
         "token}",
         "Fermium de neuter pars, {token perdere musa!",
         "Fermium de {bad-token1 pars, bad_token2} perdere musa!",
+        """\{\}""",
+        """\{token\}""",
+        """\{token""",
+        """token\}"""
     ).forEach {
-        "should reject a template containing only malformed tokens: $it" {
+        "should reject a template containing only malformed or escaped tokens: $it" {
             shouldThrow<IllegalArgumentException> {
                 MicroTemplate(it)
             }

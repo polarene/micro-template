@@ -8,7 +8,12 @@ typealias Context = Map<String, Any>
  *
  *   {identifier:default_value}
  */
-internal val TOKEN = """\{([-\w]+)(?::([^}]*))?}""".toRegex()
+private val TOKEN = """\{([-\w]+)(?::([^}]*))?}""".toRegex()
+
+/**
+ * Matches a reserved character escaped by a backslash (\).
+ */
+private val ESCAPED_RESERVED = """\\([{}])""".toRegex()
 
 /**
  * A micro template.
@@ -28,9 +33,15 @@ class MicroTemplate(val template: String, val default: String = "") {
      * @param context the values to be replaced in this template
      * @return the resulting string after interpolation
      */
-    operator fun invoke(context: Context) = template.replace(TOKEN) {
+    operator fun invoke(context: Context) = template
+        .interpolate(context)
+        .unescape()
+
+    private fun String.interpolate(context: Context) = replace(TOKEN) {
         Token(it, default).lookFrom(context)
     }
+
+    private fun String.unescape() = replace(ESCAPED_RESERVED, "$1")
 }
 
 /**
@@ -41,7 +52,7 @@ class MicroTemplate(val template: String, val default: String = "") {
  * @property default String
  * @constructor
  */
-internal class Token(m: MatchResult, globalDefault: String) {
+private class Token(m: MatchResult, globalDefault: String) {
     val name: String = m.groups[1]!!.value
     val default: String = m.groups[2]?.value ?: globalDefault
 
