@@ -73,6 +73,13 @@ class MicroTemplateSpec : StringSpec({
             MicroTemplate(it)(context) shouldMatch ".+ [{}]+"
         }
     }
+
+    "should render reserved characters in default token value when escaped" {
+        val context = emptyMap<String, Any>()
+        val literalDefault = MicroTemplate("""My placeholder is {ph:\{\}}""")
+
+        literalDefault(context) shouldBe "My placeholder is {}"
+    }
 })
 
 /**
