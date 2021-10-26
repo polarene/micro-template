@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 import io.github.polarene.MicroTemplate
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -41,7 +39,7 @@ class MicroTemplateSpec : StringSpec({
 
     "should replace any missing token with a global default value" {
         val context = emptyMap<String, Any>()
-        val greeting = MicroTemplate("Hello, {title}{name}!", default = "-")
+        val greeting = MicroTemplate("Hello, {title}{name}!", globalDefault = "-")
 
         greeting(context) shouldBe "Hello, --!"
     }

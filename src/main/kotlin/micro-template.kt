@@ -18,10 +18,10 @@ private val ESCAPED_RESERVED = """\\([{}])""".toRegex()
 /**
  * A micro template.
  * @property template A template definition
- * @property default the default value to be used for any missing token
+ * @property globalDefault the default value to be used for any missing token
  * @constructor create a reusable template
  */
-class MicroTemplate(val template: String, val default: String = "") {
+class MicroTemplate(val template: String, val globalDefault: String = "") {
     init {
         require(TOKEN.containsMatchIn(template)) {
             "A template definition must contain at least one token matching $TOKEN"
@@ -38,7 +38,7 @@ class MicroTemplate(val template: String, val default: String = "") {
         .unescape()
 
     private fun String.interpolate(context: Context) = replace(TOKEN) {
-        Token(it, default).lookFrom(context)
+        Token(it).lookFrom(context) ?: globalDefault
     }
 
     private fun String.unescape() = replace(ESCAPED_RESERVED, "$1")
@@ -47,14 +47,11 @@ class MicroTemplate(val template: String, val default: String = "") {
 /**
  * A token is a region in the template to be replaced with the corresponding value from a context.
  * If the token name isn't found in a context, then its default value is used.
- * If a token doesn't specify a default value, then globalDefault is used.
- * @property name String
- * @property default String
- * @constructor
+ * If a token doesn't specify a default value, then null is used.
  */
-private class Token(m: MatchResult, globalDefault: String) {
+private class Token(m: MatchResult) {
     val name: String = m.groups[1]!!.value
-    val default: String = m.groups[2]?.value ?: globalDefault
+    val default: String? = m.groups[2]?.value
 
-    fun lookFrom(context: Context) = context[name]?.toString() ?: default
+    fun lookFrom(context: Context): String? = context[name]?.toString() ?: default
 }
