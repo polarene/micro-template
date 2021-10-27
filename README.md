@@ -73,6 +73,7 @@ greeting(context) shouldBe "Hello, Buana Matteo!"
 Current features:
 - basic token interpolation
 - all types are converted using their `toString()` function
+- iterables and arrays are converted by joining their elements with a comma (`,`)
 - missing values are replaced with an empty string by default
 - a custom default value can be configured globally or per token
 
