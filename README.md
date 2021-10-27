@@ -27,7 +27,6 @@ val status = MicroTemplate(
     Your crypto balance is: {balance}
     """
 )
-
 val context = mapOf(
     "user" to "Tom",
     "messages" to 99,
@@ -64,8 +63,21 @@ scores(mapOf("scoreA" to 99)) // Leaderboard
 
 // or you can specify a default for a token
 val greeting = MicroTemplate("Hello, {title:Buana }{name}!")
-val context = mapOf<String, Any>("name" to "Matteo")
-greeting(context) shouldBe "Hello, Buana Matteo!"
+val context = mapOf("name" to "Matteo")
+greeting(context) // "Hello, Buana Matteo!"
+```
+
+You can have reserved characters in the text by escaping them:
+
+```kotlin
+// raw strings make escaping less verbose
+val literalToken = MicroTemplate("""Look {ma}, I need a literal \{token\} here!""")
+val context = mapOf("ma" to "Mama")
+literalToken(context) // "Look Mama, I need a literal {token} here!"
+
+// it works inside default values too 
+val literalDefault = MicroTemplate("""My placeholder is {ph:\{\}}""")
+literalDefault(emptyMap<String, Any>()) // "My placeholder is {}"
 ```
 
 ## Features
@@ -76,6 +88,7 @@ Current features:
 - iterables and arrays are converted by joining their elements with a comma (`,`)
 - missing values are replaced with an empty string by default
 - a custom default value can be configured globally or per token
+- escaping of reserved characters  
 
 Micro Template is useful if you need a quick and basic template support, hard-coded in your source code (it doesn't support loading template files).
 
