@@ -78,6 +78,27 @@ class MicroTemplateSpec : StringSpec({
 
         literalDefault(context) shouldBe "My placeholder is {}"
     }
+
+    "should render an iterable" {
+        val context = mapOf("fruits" to listOf("apple", "banana", "grape"))
+        val fruits = MicroTemplate("Fruit list: {fruits}")
+
+        fruits(context) shouldBe "Fruit list: apple,banana,grape"
+    }
+
+    "should render an array" {
+        val context = mapOf("fruits" to arrayOf("apple", "banana", "grape"))
+        val fruits = MicroTemplate("Fruit list: {fruits}")
+
+        fruits(context) shouldBe "Fruit list: apple,banana,grape"
+    }
+
+    "should render a primitive array" {
+        val context = mapOf("extraction" to intArrayOf(5, 22, 17, 80, 3))
+        val bingo = MicroTemplate("Winning numbers: {extraction}")
+
+        bingo(context) shouldBe "Winning numbers: 5,22,17,80,3"
+    }
 })
 
 /**

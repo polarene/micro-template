@@ -47,11 +47,35 @@ class MicroTemplate(val template: String, val globalDefault: String = "") {
 /**
  * A token is a region in the template to be replaced with the corresponding value from a context.
  * If the token name isn't found in a context, then its default value is used.
- * If a token doesn't specify a default value, then null is used.
+ * If a token doesn't specify a default value, then null is returned.
  */
 private class Token(m: MatchResult) {
     val name: String = m.groups[1]!!.value
     val default: String? = m.groups[2]?.value
 
-    fun lookFrom(context: Context): String? = context[name]?.toString() ?: default
+    fun lookFrom(context: Context) = context[name]?.let { Format.byType(it) } ?: default
+}
+
+/**
+ * Format determines how a value is converted to string.
+ */
+private object Format {
+    private const val separator = ","
+
+    /**
+     * Converts a value to a string depending on its type.
+     */
+    fun byType(value: Any) = when (value) {
+        is Iterable<*> -> value.joinToString(separator)
+        is Array<*> -> value.joinToString(separator)
+        is IntArray -> value.joinToString(separator)
+        is DoubleArray -> value.joinToString(separator)
+        is FloatArray -> value.joinToString(separator)
+        is LongArray -> value.joinToString(separator)
+        is CharArray -> value.joinToString(separator)
+        is ShortArray -> value.joinToString(separator)
+        is ByteArray -> value.joinToString(separator)
+        is BooleanArray -> value.joinToString(separator)
+        else -> value.toString()
+    }
 }
