@@ -4,9 +4,32 @@ A very tiny and simple text templating library for Kotlin. It has very limited f
 
 **NOTE**: It's not optimized for speed, but as long as you render short strings performance shouldn't be a problem.
 
+## Features
+
+Current features:
+- basic token interpolation
+- all types are converted using their `toString()` function
+- iterables and arrays are converted by joining their elements with a comma (`,`)
+- missing values are replaced with an empty string by default
+- a custom default value can be configured globally or per token
+- escaping of reserved characters
+
+Micro Template is useful if you need a quick and basic template support, hard-coded in your source code (it doesn't support loading template files).
+
+It does **not** support:
+- custom formatting
+- logic (no conditional or loops)
+- functions or code execution
+- template composition or inclusion
+- sub-templates/macros
+- nested interpolation (ex: {{name}})
+- loading templates from external files
+
 ## Usage
 
-A simple "hello" example:
+### A simple "hello" example
+
+You can create a reusable template and apply it like a function.
 
 ```kotlin
 // create a reusable template
@@ -16,7 +39,8 @@ val greeting = MicroTemplate("Hello, {name}!")
 val context = mapOf("name" to "Matteo")
 greeting(context) // Hello, Matteo!
 ```
-A context can contain values of any type:
+
+A context can contain values of any type. By default, they will be converted using their `toString()` method.
 
 ```kotlin
 // raw strings make multi-line templates more readable
@@ -37,14 +61,26 @@ status(context) //  Welcome back Tom!
                 //  Your crypto balance is: 10000©
 ```
 
-Handling missing values:
+Iterables and arrays are converted by joining their elements with a comma.
 
 ```kotlin
-// by default missing values are replaced with an empty string
+val fruits = MicroTemplate("Fruit list: {fruits}")
+val context = mapOf("fruits" to listOf("apple", "banana", "grape"))
+fruits(context) // "Fruit list: apple,banana,grape"
+```
+
+### Handling missing values
+
+Missing values are replaced with an empty string by default.
+
+```kotlin
 val greeting = MicroTemplate("Hello, {name}!")
 greeting(emptyMap<String, Any>()) // "Hello, !"
+```
 
-// you can set a default value for the whole template
+You can set a default value for the whole template,
+
+```kotlin
 val scores = MicroTemplate(
     """
     Leaderboard
@@ -60,46 +96,33 @@ scores(mapOf("scoreA" to 99)) // Leaderboard
                               // Team A      99
                               // Team B      N/A
                               // Team C      N/A
+```
 
-// or you can specify a default for a token
+or you can specify the default for a single token.
+
+```kotlin
 val greeting = MicroTemplate("Hello, {title:Buana }{name}!")
 val context = mapOf("name" to "Matteo")
 greeting(context) // "Hello, Buana Matteo!"
 ```
 
-You can have reserved characters in the text by escaping them:
+### Escaping 
+
+To render reserved characters in the text they must be escaped.
 
 ```kotlin
 // raw strings make escaping less verbose
 val literalToken = MicroTemplate("""Look {ma}, I need a literal \{token\} here!""")
 val context = mapOf("ma" to "Mama")
 literalToken(context) // "Look Mama, I need a literal {token} here!"
+```
 
-// it works inside default values too 
+It works inside default values too. 
+
+```kotlin
 val literalDefault = MicroTemplate("""My placeholder is {ph:\{\}}""")
 literalDefault(emptyMap<String, Any>()) // "My placeholder is {}"
 ```
-
-## Features
-
-Current features:
-- basic token interpolation
-- all types are converted using their `toString()` function
-- iterables and arrays are converted by joining their elements with a comma (`,`)
-- missing values are replaced with an empty string by default
-- a custom default value can be configured globally or per token
-- escaping of reserved characters  
-
-Micro Template is useful if you need a quick and basic template support, hard-coded in your source code (it doesn't support loading template files).
-
-It does **not** support:
-- custom formatting
-- logic (no conditional or loops)
-- functions or code execution
-- template composition or inclusion
-- sub-templates/macros
-- nested interpolation (ex: {{name}})
-- loading templates from external files
 
 ## Motivation
 
