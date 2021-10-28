@@ -1,4 +1,5 @@
-import io.github.polarene.MicroTemplate
+package io.github.polarene
+
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

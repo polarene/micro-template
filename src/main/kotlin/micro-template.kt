@@ -1,5 +1,9 @@
 package io.github.polarene
 
+import kotlin.reflect.KClass
+import kotlin.reflect.KVisibility
+import kotlin.reflect.full.memberProperties
+
 typealias Context = Map<String, Any>
 
 /**
@@ -20,6 +24,7 @@ private val ESCAPED_RESERVED = """\\([{}])""".toRegex()
  * @property template A template definition
  * @property globalDefault the default value to be used for any missing token
  * @constructor create a reusable template
+ * @throws IllegalArgumentException if template doesn't contain at least one token
  */
 class MicroTemplate(val template: String, val globalDefault: String = "") {
     init {
@@ -78,4 +83,38 @@ private object Format {
         is BooleanArray -> value.joinToString(separator)
         else -> value.toString()
     }
+}
+
+/**
+ * Constructs a type-safe wrapper around the specified [template].
+ * This template will accept only instances of [T] as the context.
+ * @param T the type to be used for context
+ * @constructor create a reusable template
+ * @throws IllegalArgumentException if contextType doesn't have any public properties
+ */
+class TypedMicroTemplate<T : Any>(val template: MicroTemplate, contextType: KClass<T>) {
+    private val publicProperties =
+        contextType.memberProperties.filter { it.visibility == KVisibility.PUBLIC }
+
+    init {
+        require(publicProperties.isNotEmpty()) {
+            "The context type ${contextType.qualifiedName} doesn't have any public properties"
+        }
+    }
+
+    /**
+     * Applies this template to the given context.
+     * @param context an object containing the values to be replaced in this template
+     * @return the resulting string after interpolation
+     */
+    operator fun invoke(context: T) = template(context.toMap())
+
+    /**
+     * Creates a Map with the properties names as keys and their actual values,
+     * without nulls.
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun T.toMap() = publicProperties
+        .associateBy({ p -> p.name }, { p -> p.get(this) })
+        .filter { e -> e.value != null } as Map<String, Any>
 }
