@@ -34,6 +34,13 @@ class MicroTemplate(val definition: String, val globalDefault: String = "") {
     }
 
     /**
+     * A set of all the token names in this template.
+     */
+    private val tokens = TOKEN.findAll(definition)
+        .map { Token(it).name }
+        .toSet()
+
+    /**
      * Applies this template to the given context.
      * @param context the values to be replaced in this template
      * @return the resulting string after interpolation
@@ -41,6 +48,11 @@ class MicroTemplate(val definition: String, val globalDefault: String = "") {
     operator fun invoke(context: Context) = definition
         .interpolate(context)
         .unescape()
+
+    /**
+     * Checks if this template contains one or more tokens with the given [name].
+     */
+    fun hasToken(name: String) = tokens.contains(name)
 
     private fun String.interpolate(context: Context) = replace(TOKEN) {
         Token(it).lookFrom(context) ?: globalDefault
@@ -62,7 +74,7 @@ private class Token(m: MatchResult) {
 }
 
 /**
- * Format determines how a value is converted to string.
+ * Format determines how a value is converted to a string.
  */
 private object Format {
     private const val separator = ","
@@ -91,6 +103,7 @@ private object Format {
  * @param T the type to be used for context
  * @constructor create a reusable template
  * @throws IllegalArgumentException if contextType doesn't have any public properties
+ * or none of them matches at least one token
  */
 class TypedMicroTemplate<T : Any>(val template: MicroTemplate, contextType: KClass<T>) {
     private val publicProperties =
@@ -98,20 +111,25 @@ class TypedMicroTemplate<T : Any>(val template: MicroTemplate, contextType: KCla
 
     init {
         require(publicProperties.isNotEmpty()) {
-            "The context type ${contextType.qualifiedName} doesn't have any public properties"
+            "The context type ${contextType.qualifiedName} must have at least one public property"
+        }
+        require(publicProperties.any { template.hasToken(it.name) }) {
+            "The context type ${contextType.qualifiedName} must have at least one property " +
+                    "matching any of the template tokens"
         }
     }
 
     /**
-     * Applies this template to the given context.
+     * Applies this template to the given [context].
      * @param context an object containing the values to be replaced in this template
      * @return the resulting string after interpolation
      */
     operator fun invoke(context: T) = template(context.toMap())
 
     /**
-     * Creates a Map with the properties names as keys and their actual values,
-     * without nulls.
+     * Converts an instance of [T] to a [Map] indexed by its properties names
+     * and containing the properties values.
+     * The properties having a `null` value are not included in the Map.
      */
     @Suppress("UNCHECKED_CAST")
     private fun T.toMap() = publicProperties

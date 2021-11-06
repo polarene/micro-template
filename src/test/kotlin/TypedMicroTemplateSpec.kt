@@ -59,7 +59,13 @@ class TypedMicroTemplateErrorSpec : StringSpec({
 
     "should reject a class without public properties" {
         shouldThrow<IllegalArgumentException> {
-            TypedMicroTemplate(hello, NoPublic::class)
+            TypedMicroTemplate(hello, NoPublicProperties::class)
+        }
+    }
+
+    "should reject a class without at least one property matching a token" {
+        shouldThrow<IllegalArgumentException> {
+            TypedMicroTemplate(hello, NoMatchingProperties::class)
         }
     }
 })
