@@ -1,6 +1,9 @@
+@file:Suppress("unused")
+
 package io.github.polarene
 
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
@@ -33,8 +36,17 @@ class TypedMicroTemplateSpec : StringSpec({
     "should accept an interface with properties" {
         val context = User("Smith")
         val typedHello = TypedMicroTemplate(hello, Id::class)
+        withClue("Only properties from the interface are used") {
+            typedHello(context) shouldBe "Hello, Smith!"
+        }
+    }
 
-        typedHello(context) shouldBe "Hello, Smith!"
+    "should accept an abstract class with properties" {
+        val context = TitledUser(title = "Mr.", name = "Smith")
+        val typedHello = TypedMicroTemplate(hello, Title::class)
+        withClue("Only properties from the parent are used") {
+            typedHello(context) shouldBe "Hello, Mr.!"
+        }
     }
 })
 
@@ -52,19 +64,23 @@ class TypedMicroTemplateErrorSpec : StringSpec({
     }
 })
 
+// the reference template to be wrapped
 val hello = MicroTemplate("Hello, {title}{name}!")
 
-// simple classes
+/* --- simple classes --- */
 class BusinessCard(val name: String, val title: String)
 class BusinessCardNil(val name: String, val title: String? = null)
 data class BusinessCardDC(val name: String, val title: String? = null)
 
-// with interfaces
+/* --- interfaces and parents --- */
 interface Id {
     val name: String
 }
 class User(override val name: String) : Id
+abstract class Title(val title: String)
+class TitledUser(val name: String, title: String) : Title(title)
 
-// no properties
+/* --- no properties --- */
 class Empty
-class NoPublic(private val name: String)
+class NoPublicProperties(private val name: String)
+class NoMatchingProperties(val id: Long, val updated: Boolean)
