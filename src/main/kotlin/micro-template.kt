@@ -21,14 +21,14 @@ private val ESCAPED_RESERVED = """\\([{}])""".toRegex()
 
 /**
  * A micro template.
- * @property template A template definition
+ * @property definition A template definition
  * @property globalDefault the default value to be used for any missing token
  * @constructor create a reusable template
  * @throws IllegalArgumentException if template doesn't contain at least one token
  */
-class MicroTemplate(val template: String, val globalDefault: String = "") {
+class MicroTemplate(val definition: String, val globalDefault: String = "") {
     init {
-        require(TOKEN.containsMatchIn(template)) {
+        require(TOKEN.containsMatchIn(definition)) {
             "A template definition must contain at least one token matching $TOKEN"
         }
     }
@@ -38,7 +38,7 @@ class MicroTemplate(val template: String, val globalDefault: String = "") {
      * @param context the values to be replaced in this template
      * @return the resulting string after interpolation
      */
-    operator fun invoke(context: Context) = template
+    operator fun invoke(context: Context) = definition
         .interpolate(context)
         .unescape()
 
