@@ -4,6 +4,9 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.memberProperties
 
+/**
+ * A context is the set of values that replaces tokens in a template.
+ */
 typealias Context = Map<String, Any>
 
 /**
@@ -41,7 +44,10 @@ class MicroTemplate(val definition: String, val globalDefault: String = "") {
         .toSet()
 
     /**
-     * Applies this template to the given context.
+     * Applies this template to the given [context], replacing each token occurrence
+     * with the given value.
+     * Null values are not allowed so if a token is missing from the context, it will be replaced
+     * with a default value.
      * @param context the values to be replaced in this template
      * @return the resulting string after interpolation
      */
@@ -65,11 +71,17 @@ class MicroTemplate(val definition: String, val globalDefault: String = "") {
  * A token is a region in the template to be replaced with the corresponding value from a context.
  * If the token name isn't found in a context, then its default value is used.
  * If a token doesn't specify a default value, then null is returned.
+ * @param m a token match in the template definition
+ * @property name the name of the token
+ * @property default the default value for the token, if declared
  */
 private class Token(m: MatchResult) {
     val name: String = m.groups[1]!!.value
     val default: String? = m.groups[2]?.value
 
+    /**
+     * Looks up the corresponding value for this token from a [context].
+     */
     fun lookFrom(context: Context) = context[name]?.let { Format.byType(it) } ?: default
 }
 
