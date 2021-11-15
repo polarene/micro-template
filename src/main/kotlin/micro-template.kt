@@ -1,5 +1,12 @@
 package io.github.polarene
 
+import kotlin.reflect.KClass
+import kotlin.reflect.KVisibility
+import kotlin.reflect.full.memberProperties
+
+/**
+ * A context is the set of values that replaces tokens in a template.
+ */
 typealias Context = Map<String, Any>
 
 /**
@@ -17,25 +24,41 @@ private val ESCAPED_RESERVED = """\\([{}])""".toRegex()
 
 /**
  * A micro template.
- * @property template A template definition
+ * @property definition A template definition
  * @property globalDefault the default value to be used for any missing token
  * @constructor create a reusable template
+ * @throws IllegalArgumentException if template doesn't contain at least one token
  */
-class MicroTemplate(val template: String, val globalDefault: String = "") {
+class MicroTemplate(val definition: String, val globalDefault: String = "") {
     init {
-        require(TOKEN.containsMatchIn(template)) {
+        require(TOKEN.containsMatchIn(definition)) {
             "A template definition must contain at least one token matching $TOKEN"
         }
     }
 
     /**
-     * Applies this template to the given context.
+     * A set of all the token names in this template.
+     */
+    private val tokens = TOKEN.findAll(definition)
+        .map { Token(it).name }
+        .toSet()
+
+    /**
+     * Applies this template to the given [context], replacing each token occurrence
+     * with the given value.
+     * Null values are not allowed so if a token is missing from the context, it will be replaced
+     * with a default value.
      * @param context the values to be replaced in this template
      * @return the resulting string after interpolation
      */
-    operator fun invoke(context: Context) = template
+    operator fun invoke(context: Context) = definition
         .interpolate(context)
         .unescape()
+
+    /**
+     * Checks if this template contains one or more tokens with the given [name].
+     */
+    fun hasToken(name: String) = tokens.contains(name)
 
     private fun String.interpolate(context: Context) = replace(TOKEN) {
         Token(it).lookFrom(context) ?: globalDefault
@@ -48,16 +71,22 @@ class MicroTemplate(val template: String, val globalDefault: String = "") {
  * A token is a region in the template to be replaced with the corresponding value from a context.
  * If the token name isn't found in a context, then its default value is used.
  * If a token doesn't specify a default value, then null is returned.
+ * @param m a token match in the template definition
+ * @property name the name of the token
+ * @property default the default value for the token, if declared
  */
 private class Token(m: MatchResult) {
     val name: String = m.groups[1]!!.value
     val default: String? = m.groups[2]?.value
 
+    /**
+     * Looks up the corresponding value for this token from a [context].
+     */
     fun lookFrom(context: Context) = context[name]?.let { Format.byType(it) } ?: default
 }
 
 /**
- * Format determines how a value is converted to string.
+ * Format determines how a value is converted to a string.
  */
 private object Format {
     private const val separator = ","
@@ -78,4 +107,44 @@ private object Format {
         is BooleanArray -> value.joinToString(separator)
         else -> value.toString()
     }
+}
+
+/**
+ * Constructs a type-safe wrapper around the specified [template].
+ * This template will accept only instances of [T] as the context.
+ * @param T the type to be used for context
+ * @constructor create a reusable template
+ * @throws IllegalArgumentException if contextType doesn't have any public properties
+ * or none of them matches at least one token
+ */
+class TypedMicroTemplate<T : Any>(val template: MicroTemplate, contextType: KClass<T>) {
+    private val publicProperties =
+        contextType.memberProperties.filter { it.visibility == KVisibility.PUBLIC }
+
+    init {
+        require(publicProperties.isNotEmpty()) {
+            "The context type ${contextType.qualifiedName} must have at least one public property"
+        }
+        require(publicProperties.any { template.hasToken(it.name) }) {
+            "The context type ${contextType.qualifiedName} must have at least one property " +
+                    "matching any of the template tokens"
+        }
+    }
+
+    /**
+     * Applies this template to the given [context].
+     * @param context an object containing the values to be replaced in this template
+     * @return the resulting string after interpolation
+     */
+    operator fun invoke(context: T) = template(context.toMap())
+
+    /**
+     * Converts an instance of [T] to a [Map] indexed by its properties names
+     * and containing the properties values.
+     * The properties having a `null` value are not included in the Map.
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun T.toMap() = publicProperties
+        .associateBy({ p -> p.name }, { p -> p.get(this) })
+        .filter { e -> e.value != null } as Map<String, Any>
 }

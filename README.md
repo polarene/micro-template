@@ -1,12 +1,36 @@
 # Micro Template 📃
 
-A very tiny and simple text templating library for Kotlin. It has very limited features, so it's intended to be used for short templates that don't need any logic or advanced formatting. All it does is replace every named token (ex: `{name}`) with a matching value from a map (context), or provide a default for missing ones. Not suitable for rendering web views or pages, in general. 
+A very tiny and simple text templating library for Kotlin. It has very limited features, so it's intended to be used for short templates that don't need any logic or advanced formatting. All it does is replace every named token (ex: `{name}`) with a matching value from a map (context), or provide a default for missing ones. Not recommended for rendering web views or pages, in general. 
 
 **NOTE**: It's not optimized for speed, but as long as you render short strings performance shouldn't be a problem.
 
+## Features
+
+Current features:
+- basic token interpolation
+- all types are converted using their `toString()` function
+- iterables and arrays are converted by joining their elements with a comma (`,`)
+- missing values are replaced with an empty string by default
+- a custom default value can be configured globally or per token
+- escaping of reserved characters
+- a type-safe wrapper around templates
+
+Micro Template is useful when you need a quick and basic support for string templates, inlined in your source (it doesn't support loading template files).
+
+It does **not** support:
+- custom formatting
+- logic (no conditional or loops)
+- functions or code execution
+- template composition or inclusion
+- sub-templates/macros
+- nested interpolation (ex: `{{name}}`)
+- loading templates from external files
+
 ## Usage
 
-A simple "hello" example:
+### A simple "hello" example
+
+You can create a reusable template and apply it like a function.
 
 ```kotlin
 // create a reusable template
@@ -16,7 +40,10 @@ val greeting = MicroTemplate("Hello, {name}!")
 val context = mapOf("name" to "Matteo")
 greeting(context) // Hello, Matteo!
 ```
-A context can contain values of any type:
+
+A context can contain values of any type. By default, they will be converted using their `toString()` method. Nullable values are not allowed. 
+For convenience a `Context` type alias is available.
+
 
 ```kotlin
 // raw strings make multi-line templates more readable
@@ -27,7 +54,8 @@ val status = MicroTemplate(
     Your crypto balance is: {balance}
     """
 )
-val context = mapOf(
+// alias of Map<String, Any>
+val context: Context = mapOf(
     "user" to "Tom",
     "messages" to 99,
     "balance" to Coin(10_000)
@@ -37,14 +65,26 @@ status(context) //  Welcome back Tom!
                 //  Your crypto balance is: 10000©
 ```
 
-Handling missing values:
+Iterables and arrays are converted by joining their elements with a comma.
 
 ```kotlin
-// by default missing values are replaced with an empty string
-val greeting = MicroTemplate("Hello, {name}!")
-greeting(emptyMap<String, Any>()) // "Hello, !"
+val fruits = MicroTemplate("Fruit list: {fruits}")
+val context = mapOf("fruits" to listOf("apple", "banana", "grape"))
+fruits(context) // Fruit list: apple,banana,grape
+```
 
-// you can set a default value for the whole template
+### Handling missing values
+
+Missing values are replaced with an empty string by default.
+
+```kotlin
+val greeting = MicroTemplate("Hello, {name}!")
+greeting(emptyMap<String, Any>()) // Hello, !
+```
+
+You can set a default value for the whole template,
+
+```kotlin
 val scores = MicroTemplate(
     """
     Leaderboard
@@ -60,46 +100,50 @@ scores(mapOf("scoreA" to 99)) // Leaderboard
                               // Team A      99
                               // Team B      N/A
                               // Team C      N/A
-
-// or you can specify a default for a token
-val greeting = MicroTemplate("Hello, {title:Buana }{name}!")
-val context = mapOf("name" to "Matteo")
-greeting(context) // "Hello, Buana Matteo!"
 ```
 
-You can have reserved characters in the text by escaping them:
+or you can specify the default for a single token.
+
+```kotlin
+val greeting = MicroTemplate("Hello, {title:Buana }{name}!")
+val context = mapOf("name" to "Matteo")
+greeting(context) // Hello, Buana Matteo!
+```
+
+Nullable types are not allowed inside a context. If you have a `null` value, simply leave it out of the context and it will be replaced with a default during interpolation.
+
+### Escaping 
+
+To render reserved characters in the text they must be escaped.
 
 ```kotlin
 // raw strings make escaping less verbose
 val literalToken = MicroTemplate("""Look {ma}, I need a literal \{token\} here!""")
 val context = mapOf("ma" to "Mama")
-literalToken(context) // "Look Mama, I need a literal {token} here!"
-
-// it works inside default values too 
-val literalDefault = MicroTemplate("""My placeholder is {ph:\{\}}""")
-literalDefault(emptyMap<String, Any>()) // "My placeholder is {}"
+literalToken(context) // Look Mama, I need a literal {token} here!
 ```
 
-## Features
+It works inside default values too. 
 
-Current features:
-- basic token interpolation
-- all types are converted using their `toString()` function
-- iterables and arrays are converted by joining their elements with a comma (`,`)
-- missing values are replaced with an empty string by default
-- a custom default value can be configured globally or per token
-- escaping of reserved characters  
+```kotlin
+val literalDefault = MicroTemplate("""My placeholder is {ph:\{\}}""")
+literalDefault(emptyMap<String, Any>()) // My placeholder is {}
+```
 
-Micro Template is useful if you need a quick and basic template support, hard-coded in your source code (it doesn't support loading template files).
+### Typed templates
 
-It does **not** support:
-- custom formatting
-- logic (no conditional or loops)
-- functions or code execution
-- template composition or inclusion
-- sub-templates/macros
-- nested interpolation (ex: {{name}})
-- loading templates from external files
+Normally a template would accept a dynamically typed context (`Map<String, Any>`), so you can pass it any value you want.
+If you like, you can create a statically typed template by wrapping an existing one. The wrapper will only accept instances of a fixed type `T` instead of a generic `Context`. All the public properties from `T` are interpolated in the template, except for null values that will be replaced with defaults.
+
+```kotlin
+class BusinessCard(val name: String, val title: String)
+
+val hello = MicroTemplate("Hello, {title}{name}")
+val typedHello = TypedMicroTemplate(hello, BusinessCard::class)
+
+typedHello(BusinessCard(name = "Smith", title = "Mr.")) // Hello, Mr.Smith
+typedHello(mapOf("name" to "Smith")) // won't compile!
+```
 
 ## Motivation
 
