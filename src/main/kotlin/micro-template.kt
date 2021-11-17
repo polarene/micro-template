@@ -10,6 +10,29 @@ import kotlin.reflect.full.memberProperties
 typealias Context = Map<String, Any>
 
 /**
+ * A Template produces a text by replacing one or more placeholder (tokens) in a definition
+ * with the values contained in a context object.
+ * @param T the type of the context
+ */
+interface Template<T : Any> {
+    /**
+     * Applies the values from [context] to produce a text.
+     */
+    operator fun invoke(context: T): String
+}
+
+/**
+ * Returns a new [MicroTemplate] with the given [definition].
+ */
+fun templateOf(definition: String) = MicroTemplate(definition)
+
+/**
+ * Returns a new [TypedMicroTemplate] with the given [definition].
+ */
+inline fun <reified T : Any> templateOf(definition: String) =
+    TypedMicroTemplate(MicroTemplate(definition), T::class)
+
+/**
  * Matches a single token inside a template.
  * A token has the form:
  *
@@ -29,7 +52,7 @@ private val ESCAPED_RESERVED = """\\([{}])""".toRegex()
  * @constructor create a reusable template
  * @throws IllegalArgumentException if template doesn't contain at least one token
  */
-class MicroTemplate(val definition: String, val globalDefault: String = "") {
+class MicroTemplate(val definition: String, val globalDefault: String = "") : Template<Context> {
     init {
         require(TOKEN.containsMatchIn(definition)) {
             "A template definition must contain at least one token matching $TOKEN"
@@ -51,7 +74,7 @@ class MicroTemplate(val definition: String, val globalDefault: String = "") {
      * @param context the values to be replaced in this template
      * @return the resulting string after interpolation
      */
-    operator fun invoke(context: Context) = definition
+    override operator fun invoke(context: Context) = definition
         .interpolate(context)
         .unescape()
 
@@ -117,7 +140,8 @@ private object Format {
  * @throws IllegalArgumentException if contextType doesn't have any public properties
  * or none of them matches at least one token
  */
-class TypedMicroTemplate<T : Any>(val template: MicroTemplate, contextType: KClass<T>) {
+class TypedMicroTemplate<T : Any>(val template: MicroTemplate, contextType: KClass<T>) :
+    Template<T> {
     private val publicProperties =
         contextType.memberProperties.filter { it.visibility == KVisibility.PUBLIC }
 
@@ -136,7 +160,7 @@ class TypedMicroTemplate<T : Any>(val template: MicroTemplate, contextType: KCla
      * @param context an object containing the values to be replaced in this template
      * @return the resulting string after interpolation
      */
-    operator fun invoke(context: T) = template(context.toMap())
+    override operator fun invoke(context: T) = template(context.toMap())
 
     /**
      * Converts an instance of [T] to a [Map] indexed by its properties names
