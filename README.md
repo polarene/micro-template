@@ -132,7 +132,7 @@ literalDefault(emptyMap<String, Any>()) // My placeholder is {}
 
 ### Typed templates
 
-Normally a template would accept a dynamically typed context (`Map<String, Any>`), so you can pass it any value you want.
+Normally a template would accept a dynamically typed context (`Map<String, Any>`), thus you can pass it any value you want.
 If you like, you can create a statically typed template by wrapping an existing one. The wrapper will only accept instances of a fixed type `T` instead of a generic `Context`. All the public properties from `T` are interpolated in the template, except for null values that will be replaced with defaults.
 
 ```kotlin
@@ -143,6 +143,20 @@ val typedHello = TypedMicroTemplate(hello, BusinessCard::class)
 
 typedHello(BusinessCard(name = "Smith", title = "Mr.")) // Hello, Mr.Smith
 typedHello(mapOf("name" to "Smith")) // won't compile!
+```
+
+### Factory functions
+
+You can create templates also using factory functions, decoupling your code from the concrete implementations.
+
+```kotlin
+// creates a standard template, accepts a Context
+val hello = templateOf("Hello, {name}")
+hello(mapOf(...))
+
+// creates a typed template, accepts a User 
+val hello = templateOf<User>("Hello, {name}")
+hello(User(...))
 ```
 
 ## Motivation
