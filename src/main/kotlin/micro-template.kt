@@ -22,14 +22,15 @@ interface Template<T : Any> {
 }
 
 /**
- * Returns a new [MicroTemplate] with the given [definition].
+ * Returns a new standard [Template] with the given [definition].
  */
-fun templateOf(definition: String) = MicroTemplate(definition)
+fun templateOf(definition: String): Template<Context> = MicroTemplate(definition)
 
 /**
- * Returns a new [TypedMicroTemplate] with the given [definition].
+ * Returns a new typed [Template] with the given [definition].
  */
-inline fun <reified T : Any> templateOf(definition: String) =
+@JvmName("typedTemplateOf")
+inline fun <reified T : Any> templateOf(definition: String): Template<T> =
     TypedMicroTemplate(MicroTemplate(definition), T::class)
 
 /**

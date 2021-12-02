@@ -13,14 +13,14 @@ import io.kotest.matchers.types.beOfType
 class FactoriesSpec : StringSpec({
     val definition = "Hello, {thing}!"
 
-    "should create a template accepting a Context" {
-        val hello = templateOf(definition)
+    "should create a template accepting a Context instance" {
+        val hello: Template<Context> = templateOf(definition)
 
         hello should beOfType<MicroTemplate>()
     }
 
-    "should create a template accepting a context of the specified type" {
-        val hello = templateOf<Box>(definition)
+    "should create a template accepting an instance of the specified type" {
+        val hello: Template<Box> = templateOf<Box>(definition)
 
         hello should beOfType<TypedMicroTemplate<Box>>()
     }
