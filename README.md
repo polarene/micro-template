@@ -145,6 +145,20 @@ typedHello(BusinessCard(name = "Smith", title = "Mr.")) // Hello, Mr.Smith
 typedHello(mapOf("name" to "Smith")) // won't compile!
 ```
 
+### Factory functions
+
+You can create templates also using factory functions, decoupling your code from the concrete implementations.
+
+```kotlin
+// creates a standard template, accepts a Context
+val hello = templateOf("Hello, {name}")
+hello(mapOf(...))
+
+// creates a typed template, accepts a User 
+val hello = templateOf<User>("Hello, {name}")
+hello(User(...))
+```
+
 ## Motivation
 
 Why use this library if Kotlin already has built-in support for string templates? The problem with template expressions is that they can't be created and used dynamically, since they are evaluated at compile time, so their bindings (context) must be visible in the scope of their declaration.
