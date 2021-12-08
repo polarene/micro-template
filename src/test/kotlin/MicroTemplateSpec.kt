@@ -67,7 +67,8 @@ class MicroTemplateSpec : StringSpec({
 
     "should replace any missing token with a global default value" {
         val context = emptyMap<String, Any>()
-        val greeting = MicroTemplate("Hello, {title}{name}!", globalDefault = "-")
+        val config = Configuration(globalDefault = "-")
+        val greeting = MicroTemplate("Hello, {title}{name}!", config)
 
         greeting(context) shouldBe "Hello, --!"
     }
@@ -132,6 +133,14 @@ class MicroTemplateSpec : StringSpec({
         val bingo = MicroTemplate("Winning numbers: {extraction}")
 
         bingo(context) shouldBe "Winning numbers: 5,22,17,80,3"
+    }
+
+    "should render an iterable with the given separator" {
+        val context = mapOf("fruits" to listOf("apple", "banana", "grape"))
+        val config = Configuration(separator = " | ")
+        val fruits = MicroTemplate("Fruit list: {fruits}", config)
+
+        fruits(context) shouldBe "Fruit list: apple | banana | grape"
     }
 })
 

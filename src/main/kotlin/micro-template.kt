@@ -23,15 +23,39 @@ interface Template<T : Any> {
 
 /**
  * Returns a new standard [Template] with the given [definition].
+ * Optionally you can configure the template using a lambda:
+ *
+ *     val hello = templateOf("Hello, {name}!") {
+ *         globalDefault = "N/A"
+ *     }
  */
-fun templateOf(definition: String): Template<Context> = MicroTemplate(definition)
+fun templateOf(definition: String, block: Configuration.() -> Unit = {}): Template<Context> =
+    MicroTemplate(definition, Configuration().apply(block))
 
 /**
  * Returns a new typed [Template] with the given [definition].
+ * Optionally you can configure the template using a lambda:
+ *
+ *     val hello = templateOf<User>("Hello, {name}!") {
+ *         globalDefault = "N/A"
+ *     }
  */
 @JvmName("typedTemplateOf")
-inline fun <reified T : Any> templateOf(definition: String): Template<T> =
-    TypedMicroTemplate(MicroTemplate(definition), T::class)
+inline fun <reified T : Any> templateOf(
+    definition: String,
+    noinline block: Configuration.() -> Unit = {}
+): Template<T> =
+    TypedMicroTemplate(templateOf(definition, block) as MicroTemplate, T::class)
+
+/**
+ * Configuration properties for tokens interpolation and conversion.
+ * @property globalDefault the default value to be used for any missing token
+ * @property separator the separator used when joining iterables and arrays
+ */
+data class Configuration(
+    var globalDefault: String = "",
+    var separator: String = ",",
+)
 
 /**
  * Matches a single token inside a template.
@@ -49,11 +73,12 @@ private val ESCAPED_RESERVED = """\\([{}])""".toRegex()
 /**
  * A micro template.
  * @property definition A template definition
- * @property globalDefault the default value to be used for any missing token
+ * @property configuration Configuration settings for tokens interpolation
  * @constructor create a reusable template
  * @throws IllegalArgumentException if template doesn't contain at least one token
  */
-class MicroTemplate(val definition: String, val globalDefault: String = "") : Template<Context> {
+class MicroTemplate(val definition: String, val configuration: Configuration = Configuration()) :
+    Template<Context> {
     init {
         require(TOKEN.containsMatchIn(definition)) {
             "A template definition must contain at least one token matching $TOKEN"
@@ -68,6 +93,11 @@ class MicroTemplate(val definition: String, val globalDefault: String = "") : Te
         .toSet()
 
     /**
+     * The formatting rules for this template.
+     */
+    private val format = Format(configuration.separator)
+
+    /**
      * Applies this template to the given [context], replacing each token occurrence
      * with the given value.
      * Null values are not allowed so if a token is missing from the context, it will be replaced
@@ -75,9 +105,10 @@ class MicroTemplate(val definition: String, val globalDefault: String = "") : Te
      * @param context the values to be replaced in this template
      * @return the resulting string after interpolation
      */
-    override operator fun invoke(context: Context) = definition
-        .interpolate(context)
-        .unescape()
+    override operator fun invoke(context: Context) =
+        definition
+            .interpolate(context)
+            .unescape()
 
     /**
      * Checks if this template contains one or more tokens with the given [name].
@@ -85,7 +116,7 @@ class MicroTemplate(val definition: String, val globalDefault: String = "") : Te
     fun hasToken(name: String) = tokens.contains(name)
 
     private fun String.interpolate(context: Context) = replace(TOKEN) {
-        Token(it).lookFrom(context) ?: globalDefault
+        Token(it).renderWith(context, format) ?: configuration.globalDefault
     }
 
     private fun String.unescape() = replace(ESCAPED_RESERVED, "$1")
@@ -93,8 +124,9 @@ class MicroTemplate(val definition: String, val globalDefault: String = "") : Te
 
 /**
  * A token is a region in the template to be replaced with the corresponding value from a context.
+ * The value is converted to a string using the given [format].
  * If the token name isn't found in a context, then its default value is used.
- * If a token doesn't specify a default value, then null is returned.
+ * If a token doesn't specify a default value, then `null` is returned.
  * @param m a token match in the template definition
  * @property name the name of the token
  * @property default the default value for the token, if declared
@@ -104,17 +136,17 @@ private class Token(m: MatchResult) {
     val default: String? = m.groups[2]?.value
 
     /**
-     * Looks up the corresponding value for this token from a [context].
+     * Looks up the corresponding value for this token from a [context],
+     * and converts it using [format].
      */
-    fun lookFrom(context: Context) = context[name]?.let { Format.byType(it) } ?: default
+    fun renderWith(context: Context, format: Format) =
+        context[name]?.let { format.byType(it) } ?: default
 }
 
 /**
  * Format determines how a value is converted to a string.
  */
-private object Format {
-    private const val separator = ","
-
+private class Format(val separator: String) {
     /**
      * Converts a value to a string depending on its type.
      */
