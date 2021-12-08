@@ -33,6 +33,13 @@ class TypedMicroTemplateSpec : StringSpec({
         typedHello(context) shouldBe "Hello, Smith!"
     }
 
+    "should accept an internal class with public properties" {
+        val context = ConfidentialCard(name = "Smith")
+        val typedHello = TypedMicroTemplate(hello, ConfidentialCard::class)
+
+        typedHello(context) shouldBe "Hello, Smith!"
+    }
+
     "should accept an interface with properties" {
         val context = User("Smith")
         val typedHello = TypedMicroTemplate(hello, Id::class)
@@ -68,20 +75,28 @@ class TypedMicroTemplateErrorSpec : StringSpec({
             TypedMicroTemplate(hello, NoMatchingProperties::class)
         }
     }
+
+    "should reject a private class with public properties" {
+        shouldThrow<IllegalArgumentException> {
+            TypedMicroTemplate(hello, Private::class)
+        }
+    }
 })
 
 // the reference template to be wrapped
-val hello = MicroTemplate("Hello, {title}{name}!")
+private val hello = MicroTemplate("Hello, {title}{name}!")
 
 /* --- simple classes --- */
 class BusinessCard(val name: String, val title: String)
 class BusinessCardNil(val name: String, val title: String? = null)
 data class BusinessCardDC(val name: String, val title: String? = null)
+internal class ConfidentialCard(val name: String)
 
 /* --- interfaces and parents --- */
 interface Id {
     val name: String
 }
+
 class User(override val name: String) : Id
 abstract class Title(val title: String)
 class TitledUser(val name: String, title: String) : Title(title)
@@ -90,3 +105,6 @@ class TitledUser(val name: String, title: String) : Title(title)
 class Empty
 class NoPublicProperties(private val name: String)
 class NoMatchingProperties(val id: Long, val updated: Boolean)
+
+/* --- inaccessible --- */
+private class Private(val name: String)

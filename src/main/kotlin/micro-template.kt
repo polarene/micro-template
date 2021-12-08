@@ -175,6 +175,14 @@ private class Format(val separator: String) {
  */
 class TypedMicroTemplate<T : Any>(val template: MicroTemplate, contextType: KClass<T>) :
     Template<T> {
+    init {
+        // needed because of https://youtrack.jetbrains.com/issue/KT-18408
+        require(contextType.visibility != KVisibility.PRIVATE) {
+            "The context type ${contextType.qualifiedName} must be public or internal " +
+                    "in order to access its properties from the template"
+        }
+    }
+
     private val publicProperties =
         contextType.memberProperties.filter { it.visibility == KVisibility.PUBLIC }
 
