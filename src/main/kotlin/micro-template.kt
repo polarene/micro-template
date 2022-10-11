@@ -1,5 +1,7 @@
 package io.github.polarene
 
+import java.math.RoundingMode
+import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.memberProperties
@@ -10,7 +12,7 @@ import kotlin.reflect.full.memberProperties
 typealias Context = Map<String, Any>
 
 /**
- * A Template produces a text by replacing one or more placeholder (tokens) in a definition
+ * A Template produces a text by replacing one or more tokens (placeholders) in a definition
  * with the values contained in a context object.
  * @param T the type of the context
  */
@@ -55,7 +57,52 @@ inline fun <reified T : Any> templateOf(
 data class Configuration(
     var globalDefault: String = "",
     var separator: String = ",",
+    var numberFormat: NumberFormat = NumberFormat.Default
 )
+
+/**
+ * A predefined set of number formats
+ *
+ */
+enum class NumberFormat {
+    Default {
+        override fun convert(n: Number) = n.toString()
+    },
+    Round {
+        val nf = numberFormatter().apply {
+            maximumFractionDigits = 0
+        }!!
+
+        override fun convert(n: Number): String {
+            return when (n) {
+                is Int -> n.toString()
+                is Long -> n.toString()
+                else -> nf.format(n)
+            }
+        }
+    },
+    Cents {
+        val nf = numberFormatter().apply {
+            minimumFractionDigits = 2
+            maximumFractionDigits = 2
+        }!!
+
+        override fun convert(n: Number): String = nf.format(n)
+    },
+    Percent {
+        override fun convert(n: Number): String {
+            TODO("Not yet implemented")
+        }
+    };
+
+    abstract fun convert(n: Number): String
+
+    protected fun numberFormatter() =
+        java.text.NumberFormat.getNumberInstance(Locale.ENGLISH).apply {
+            isGroupingUsed = false
+            roundingMode = RoundingMode.HALF_EVEN
+        }
+}
 
 /**
  * Matches a single token inside a template.
@@ -95,7 +142,9 @@ class MicroTemplate(val definition: String, val configuration: Configuration = C
     /**
      * The formatting rules for this template.
      */
-    private val format = Format(configuration.separator)
+    private val format = with(configuration) {
+        Format(separator, numberFormat)
+    }
 
     /**
      * Applies this template to the given [context], replacing each token occurrence
@@ -146,7 +195,7 @@ private class Token(m: MatchResult) {
 /**
  * Format determines how a value is converted to a string.
  */
-private class Format(val separator: String) {
+private class Format(val separator: String, val numberFormat: NumberFormat) {
     /**
      * Converts a value to a string depending on its type.
      */
@@ -161,6 +210,7 @@ private class Format(val separator: String) {
         is ShortArray -> value.joinToString(separator)
         is ByteArray -> value.joinToString(separator)
         is BooleanArray -> value.joinToString(separator)
+        is Number -> numberFormat.convert(value)
         else -> value.toString()
     }
 }
